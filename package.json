@@ -2,7 +2,7 @@
   "name": "@luckbox/ipc-messenger",
   "author": "Luckbox",
   "version": "1.0.0",
-  "description": "Messenger for ipc",
+  "description": "Client for ipc",
   "main": "dist/index.js",
   "repository": {
     "type": "git",

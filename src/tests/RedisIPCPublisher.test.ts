@@ -9,80 +9,93 @@ jest.mock('ioredis');
 const mockedRedis = Redis as jest.Mocked<typeof Redis>;
 
 describe('RedisIPCMessenger', () => {
-  it('should fail to construct with empty room', () => {
-    expect(() => {
-      new RedisIPCMessenger({
-        callback: () => {},
-        instance: 'test',
-        room: '',
-      });
-    }).toThrow(TypeError);
-  });
+  const testMessage = {
+    type: MessageTypes.Handover,
+  };
 
-  it('should fail to construct with room containing ":"', () => {
-    expect(() => {
-      new RedisIPCMessenger({
-        callback: () => {},
-        instance: 'test',
-        room: 'a:b',
-      });
-    }).toThrow(TypeError);
-  });
-
-  it('should fail to construct with empty instance', () => {
-    expect(() => {
-      new RedisIPCMessenger({
-        callback: () => {},
-        instance: '',
-        room: 'test',
-      });
-    }).toThrow(TypeError);
-  });
-
-  it('should fail to construct with instance containing ":"', () => {
-    expect(() => {
-      new RedisIPCMessenger({
-        callback: () => {},
-        instance: 'test',
-        room: 'a:b',
-      });
-    }).toThrow(TypeError);
-  });
-
-  it('should query all the keys when calling getOtherInstances', async () => {
-    const redisIpcMessenger = new RedisIPCMessenger({
-      callback: () => {},
+  describe('join', () => {
+    const ipcMessenger = new RedisIPCMessenger({
       instance: 'c1',
-      room: 'ab',
     });
 
-    await redisIpcMessenger.join();
+    it.each([
+      '', 'room:',
+    ])('should throw TypeError when calling with room - %s', async (room) => {
+      await expect(ipcMessenger.join(room, () => {})).rejects.toThrow(TypeError);
+    });
 
-    mockedRedis.prototype.keys.mockImplementationOnce(async (pattern: string) => {
-      if (pattern === 'ab:*') {
-        return ['ab:c1', 'ab:c2'];
+    it('should route the message to the correct callback', async () => {
+      let hijackedCallback: Function;
+      mockedRedis.prototype.on = (event: string, callback: Function) => {
+        if (event === 'message') {
+          hijackedCallback = callback;
+        }
       }
-    });
 
-    const otherInstances = await redisIpcMessenger.getOtherInstances();
-    expect(otherInstances).toEqual(['c2']);
+      const spiedCallback1 = jest.fn();
+      const spiedCallback2 = jest.fn();
+      await ipcMessenger.join('r1', spiedCallback1);
+      await ipcMessenger.join('r2', spiedCallback2);
+
+      hijackedCallback('r1', JSON.stringify(testMessage));
+
+      expect(spiedCallback1).toHaveBeenCalledWith(testMessage);
+      expect(spiedCallback2).not.toHaveBeenCalled();
+    });
   });
 
-  it('should publish the message', async () => {
-    const redisIpcMessenger = new RedisIPCMessenger({
-      callback: () => {},
+  describe('getOtherInstance', () => {
+    const ipcMessenger = new RedisIPCMessenger({
       instance: 'c1',
-      room: 'ab',
     });
 
-    await redisIpcMessenger.join();
-    await redisIpcMessenger.send({
-      type: MessageTypes.Handover,
+    it.each([
+      '', 'room:',
+    ])('should throw TypeError when calling with room - %s', async (room) => {
+      await expect(ipcMessenger.getOtherInstances(room)).rejects.toThrow(TypeError);
     });
 
-    expect(mockedRedis.prototype.publish).toHaveBeenCalledWith('ab', JSON.stringify({
-      type: MessageTypes.Handover,
-      sender: 'c1',
-    }));
+    it('should throw Error when calling without joining the room', async () => {
+      await expect(ipcMessenger.getOtherInstances('r1')).rejects.toThrow(Error);
+    });
+
+    it('should query all the keys and filter out its own one', async () => {
+      await ipcMessenger.join('r1', () => {});
+
+      mockedRedis.prototype.keys.mockImplementationOnce(async (pattern: string) => {
+        if (pattern === 'r1:*') {
+          return ['r1:c1', 'r1:c2'];
+        }
+      });
+
+      const otherInstances = await ipcMessenger.getOtherInstances('r1');
+      expect(otherInstances).toEqual(['c2']);
+    });
+  });
+
+  describe('send', () => {
+    const ipcMessenger = new RedisIPCMessenger({
+      instance: 'c1',
+    });
+
+    it.each([
+      '', 'room:',
+    ])('should throw TypeError when calling with room - %s', async (room) => {
+      await expect(ipcMessenger.send(room, testMessage)).rejects.toThrow(TypeError);
+    });
+
+    it('should throw Error when calling without joining the room', async () => {
+      await expect(ipcMessenger.send('r1', testMessage)).rejects.toThrow(Error);
+    });
+
+    it('should publish the payload in the correct namespace', async () => {
+      await ipcMessenger.join('r1', () => {});
+      await ipcMessenger.send('r1', testMessage);
+
+      expect(mockedRedis.prototype.publish).toHaveBeenCalledWith('r1', JSON.stringify({
+        ...testMessage,
+        sender: 'c1',
+      }));
+    });
   });
 });

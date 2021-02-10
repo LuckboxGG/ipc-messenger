@@ -22,9 +22,9 @@ type Message = HandoverMessage | LeaveMessage;
 type MessageCallback = (message: Message) => void;
 
 interface IPCMessenger {
-  join(): Promise<void>;
-  getOtherInstances(): Promise<Array<Instance>>;
-  send(message: Message): Promise<void>;
+  join(room: Room, callback: MessageCallback): Promise<void>;
+  getOtherInstances(room: Room): Promise<Array<Instance>>;
+  send(room: Room, message: Message): Promise<void>;
 }
 
 export default IPCMessenger;
