@@ -1,0 +1,55 @@
+{
+  "name": "@luckbox/ipc-messenger",
+  "author": "Luckbox",
+  "version": "1.0.0",
+  "description": "Messenger for ipc",
+  "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuckboxGG/ipc-messenger.git"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --cache --fix",
+      "git add"
+    ]
+  },
+  "scripts": {
+    "build": "rm -rf dist/ && tsc -d",
+    "lint": "eslint \"**/*.ts\"",
+    "lint:fix": "npm run lint -- --fix",
+    "test": "jest --collectCoverage",
+    "test:watch": "jest --watchAll",
+    "coveralls": "cat ./coverage/lcov.info | coveralls",
+    "precommit": "lint-staged",
+    "prepublishOnly": "npm run build"
+  },
+  "homepage": "https://github.com/LuckboxGG/ipc-messenger#readme",
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "keywords": [],
+  "license": "ISC",
+  "dependencies": {
+    "ioredis": "^4.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.1.4",
+    "@luckbox/eslint-rules": "4.0.4",
+    "@types/ioredis": "^4.19.3",
+    "@types/jest": "^26.0.3",
+    "@types/node": "^14.0.14",
+    "@typescript-eslint/eslint-plugin": "^4.0.0",
+    "@typescript-eslint/parser": "^4.0.0",
+    "coveralls": "^3.1.0",
+    "eslint": "^7.2.0",
+    "eslint-plugin-no-only-tests": "^2.4.0",
+    "eslint-plugin-node": "^11.1.0",
+    "husky": "^4.2.5",
+    "jest": "^26.1.0",
+    "lint-staged": "^10.2.11",
+    "ts-jest": "^26.1.1"
+  }
+}
