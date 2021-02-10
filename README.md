@@ -6,9 +6,7 @@
 
 ```
 const ipcMessenger = new RedisIPCMessenger({
-  callback: () => {},
   instance: 'test',
-  room: 'some-room',
   expireTime: 10000,
   refreshTime: 1000,
 });
@@ -17,7 +15,7 @@ const ipcMessenger = new RedisIPCMessenger({
 
 ### Methods
 
-- `join()` - Joins the room provided in the constructor args and automatically starts listening for new messages
-- `getOtherInstances()` - Retrieves an array of the other participants in the room
-- `send(message: Message)` - Sends a message to the rest of the participants in the room
+- `join(room: string, callback: Function)` - Joins the room provided in the constructor args and automatically starts listening for new messages
+- `getOtherInstances(room: string)` - Retrieves an array of the other participants in the room
+- `send(room: string, message: Message)` - Sends a message to the rest of the participants in the room
 
