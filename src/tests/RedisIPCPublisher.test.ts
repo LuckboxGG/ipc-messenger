@@ -25,12 +25,12 @@ describe('RedisIPCMessenger', () => {
     });
 
     it('should route the message to the correct callback', async () => {
-      let hijackedCallback: Function;
-      mockedRedis.prototype.on = (event: string, callback: Function) => {
+      let hijackedCallback;
+      mockedRedis.prototype.on = (event: string, callback) => {
         if (event === 'message') {
           hijackedCallback = callback;
         }
-      }
+      };
 
       const spiedCallback1 = jest.fn();
       const spiedCallback2 = jest.fn();
