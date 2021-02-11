@@ -25,8 +25,9 @@ describe('RedisIPCMessenger', () => {
     });
 
     it('should route the message to the correct callback', async () => {
-      let hijackedCallback;
-      mockedRedis.prototype.on = (event: string, callback) => {
+      type GenericFunction = (...arg: Array<any>) => void;
+      let hijackedCallback: GenericFunction = () => {};
+      mockedRedis.prototype.on = (event: string, callback: GenericFunction) => {
         if (event === 'message') {
           hijackedCallback = callback;
         }

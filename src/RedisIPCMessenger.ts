@@ -24,7 +24,7 @@ class RedisIPCMessenger implements IPCMessenger {
   private hasSetupCallbacks: boolean;
 
   constructor(params: ConstructorParams) {
-    this.validateRoomOrInstance(params.instance);
+    this.validateInstance(params.instance);
 
     this.instance = params.instance;
     this.subscriptions = new Map();
@@ -36,29 +36,17 @@ class RedisIPCMessenger implements IPCMessenger {
   }
 
   async join(room: Room, callback: MessageCallback): Promise<void> {
-    this.validateRoomOrInstance(room);
+    this.validateRoom(room);
 
-    this.subscriptions.set(room, callback);
-
-    const refreshKeyLoop = async () => {
-      await this.publisher.set(`${room}:${this.instance}`, '', 'EX', this.expireTime / 1000);
-      setTimeout(refreshKeyLoop, this.refreshTime);
-    };
-    await refreshKeyLoop();
-
-    await this.subscriber.config('SET', 'notify-keyspace-events', 'Kx');
-    await this.subscriber.psubscribe(`__keyspace@0__:${room}:*`);
-    await this.subscriber.subscribe(`${room}`);
-
-    this.setupCallbacksIfNecessary();
+    this.storeSubscription(room, callback);
+    await this.setupCallbacksIfNecessary();
+    await this.subscribeForRoomEvents(room);
+    await this.startRefreshKeyLoop(room);
   }
 
   async getOtherInstances(room: Room): Promise<Array<Instance>> {
-    this.validateRoomOrInstance(room);
-
-    if (!this.subscriptions.has(room)) {
-      throw new Error(`You are not joined in ${room}!`);
-    }
+    this.validateRoom(room);
+    this.makeSureRoomIsJoined(room);
 
     const keys = await this.publisher.keys(`${room}:*`);
     return keys.map((key) => {
@@ -68,11 +56,8 @@ class RedisIPCMessenger implements IPCMessenger {
   }
 
   async send(room: Room, message: Omit<Message, 'sender'>): Promise<void> {
-    this.validateRoomOrInstance(room);
-
-    if (!this.subscriptions.has(room)) {
-      throw new Error(`You are not joined in ${room}!`);
-    }
+    this.validateRoom(room);
+    this.makeSureRoomIsJoined(room);
 
     await this.publisher.publish(room, this.serialize({
       ...message,
@@ -80,42 +65,75 @@ class RedisIPCMessenger implements IPCMessenger {
     }));
   }
 
-  private validateRoomOrInstance(roomOrInstance: string) {
-    if (!roomOrInstance.length || roomOrInstance.includes(':')) {
-      throw new TypeError(`room/instance must be a non empty string and should not include ':', ${roomOrInstance} received`);
+  private validateRoom(room: string) {
+    if (!room.length || room.includes(':')) {
+      throw new TypeError(`room must be a non empty string and should not include ':', ${room} received`);
     }
   }
 
-  private setupCallbacksIfNecessary() {
+  private validateInstance(instance: string) {
+    if (!instance.length || instance.includes(':')) {
+      throw new TypeError(`room/instance must be a non empty string and should not include ':', ${instance} received`);
+    }
+  }
+
+  private startRefreshKeyLoop = async (room: Room) => {
+    const refreshKeyLoop = async () => {
+      await this.publisher.set(`${room}:${this.instance}`, '', 'EX', this.expireTime / 1000);
+      setTimeout(refreshKeyLoop, this.refreshTime);
+    };
+
+    await refreshKeyLoop();
+  };
+
+  private storeSubscription(room: Room, callback: MessageCallback) {
+    this.subscriptions.set(room, callback);
+  }
+
+  private async subscribeForRoomEvents(room: Room) {
+    await this.subscriber.psubscribe(`__keyspace@0__:${room}:*`);
+    await this.subscriber.subscribe(`${room}`);
+  }
+
+  private makeSureRoomIsJoined(room: Room) {
+    if (!this.subscriptions.has(room)) {
+      throw new Error(`You are not joined in ${room}!`);
+    }
+  }
+
+  private async setupCallbacksIfNecessary() {
     if (this.hasSetupCallbacks) {
       return;
     }
 
-    this.subscriber.on('pmessage', (pattern, key) => {
-      const [, room, instance] = key.split(':');
-      const callback = this.subscriptions.get(room);
-      if (callback) {
-        callback({
-          type: MessageTypes.Leave,
-          sender: instance,
-        });
-      }
-    });
-
-    this.subscriber.on('message', (room, payload) => {
-      const callback = this.subscriptions.get(room);
-      if (callback) {
-        const message = this.deserialize(payload);
-        if (message.sender === this.instance) {
-          // Skip our own messages
-          return;
-        }
-
-        callback(message);
-      }
-    });
+    await this.subscriber.config('SET', 'notify-keyspace-events', 'Kx');
+    this.subscriber.on('pmessage', this.onExpiredKeyMessage);
+    this.subscriber.on('message', this.onPubSubMessage);
 
     this.hasSetupCallbacks = true;
+  }
+
+  private onExpiredKeyMessage = (pattern: string, key: string) => {
+    const [, room, instance] = key.split(':');
+    const callback = this.subscriptions.get(room);
+    if (callback) {
+      callback({
+        type: MessageTypes.Leave,
+        sender: instance,
+      });
+    }
+  }
+
+  private onPubSubMessage = (channel: string, payload: string) => {
+    const callback = this.subscriptions.get(channel);
+    if (callback) {
+      const message = this.deserialize(payload);
+      if (message.sender === this.instance) {
+        return;
+      }
+
+      callback(message);
+    }
   }
 
   private serialize(message: Message) {

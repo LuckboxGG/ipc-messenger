@@ -1,3 +1,4 @@
+// import IPCMessenger from './IPCMessenger';
 import IPCMessenger from './IPCMessenger';
 import RedisIPCMessenger from './RedisIPCMessenger';
 
