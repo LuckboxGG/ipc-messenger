@@ -107,8 +107,8 @@ class RedisIPCMessenger implements IPCMessenger {
     });
   }
 
-  private onPubSubMessage = (channel: string, payload: string) => {
-    const callback = this.subscriptions.get(channel as Room) as MessageCallback;
+  private onPubSubMessage = (channel: Room, payload: string) => {
+    const callback = this.subscriptions.get(channel) as MessageCallback;
     const message = this.deserialize(payload);
     if (message.sender === this.instance) {
       return;
