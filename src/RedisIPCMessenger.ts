@@ -65,13 +65,13 @@ class RedisIPCMessenger implements IPCMessenger {
     }));
   }
 
-  private validateRoom(room: string) {
+  private validateRoom(room: Room) {
     if (!room.length || room.includes(':')) {
       throw new TypeError(`room must be a non empty string and should not include ':', ${room} received`);
     }
   }
 
-  private validateInstance(instance: string) {
+  private validateInstance(instance: Instance) {
     if (!instance.length || instance.includes(':')) {
       throw new TypeError(`room/instance must be a non empty string and should not include ':', ${instance} received`);
     }
