@@ -66,12 +66,8 @@ class RedisIPCMessenger implements IPCMessenger {
   }
 
   private startRefreshKeyLoop = async (room: Room) => {
-    const refreshKeyLoop = async () => {
-      await this.publisher.set(`${room}:${this.instance}`, '', 'EX', this.expireTime / 1000);
-      setTimeout(refreshKeyLoop, this.refreshInterval);
-    };
-
-    await refreshKeyLoop();
+    await this.publisher.set(`${room}:${this.instance}`, '', 'EX', this.expireTime / 1000);
+    setTimeout(this.startRefreshKeyLoop, this.refreshInterval);
   };
 
   private storeSubscription(room: Room, callback: MessageCallback) {
