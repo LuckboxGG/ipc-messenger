@@ -53,6 +53,13 @@ const makeInstance = (instance: string): Instance => {
   return instance as Instance;
 };
 
+// const makeMessage = (message: any): Message => {
+//   // if (typeof message !== 'object' || message === null || Array.isArray(message)) {
+//   //   throw new TypeError('Non-objects cannot be used as messages');
+//   // }
+//   return message as Message;
+// }
+
 export default IPCMessenger;
 export {
   Room,

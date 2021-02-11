@@ -98,23 +98,38 @@ class RedisIPCMessenger implements IPCMessenger {
   }
 
   private onExpiredKeyMessage = (_pattern: string, key: string) => {
-    const [, room, instance] = key.split(':');
-    const callback = this.subscriptions.get(room as Room) as MessageCallback;
+    try {
+      const [, room, instance] = key.split(':');
+      const callback = this.subscriptions.get(makeRoom(room));
+      if (!callback) {
+        throw new Error(`Failed to map ${key} to a callback`);
+      }
 
-    callback({
-      type: MessageTypes.Leave,
-      sender: instance as Instance,
-    });
+      callback({
+        type: MessageTypes.Leave,
+        sender: makeInstance(instance),
+      });
+    } catch (err) {
+      this.warn(err);
+    }
   }
 
-  private onPubSubMessage = (channel: Room, payload: string) => {
-    const callback = this.subscriptions.get(channel) as MessageCallback;
-    const message = this.deserialize(payload);
-    if (message.sender === this.instance) {
-      return;
-    }
+  private onPubSubMessage = (channel: string, payload: string) => {
+    try {
+      const callback = this.subscriptions.get(makeRoom(channel));
+      if (!callback) {
+        throw new Error(`Failed to map ${channel} to a callback`);
+      }
 
-    callback(message);
+      const message = this.deserialize(payload);
+      if (message.sender === this.instance) {
+        return;
+      }
+
+      callback(message);
+    } catch (err) {
+      this.warn(err);
+    }
   }
 
   private serialize(message: Message) {
@@ -123,6 +138,10 @@ class RedisIPCMessenger implements IPCMessenger {
 
   private deserialize(payload: string) {
     return JSON.parse(payload) as Message;
+  }
+
+  private warn(...args: Array<unknown>) {
+    console.warn('[RedisIPCMessenger]', ...args);
   }
 }
 

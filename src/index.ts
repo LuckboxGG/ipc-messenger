@@ -6,7 +6,6 @@ export {
   RedisIPCMessenger,
 };
 
-
 export {
   Room,
   Instance,
