@@ -1,4 +1,5 @@
 import Opaque from 'ts-opaque';
+import isPlainObject from 'lodash.isplainobject';
 
 type Room = Opaque<string, 'Room'>;
 type Instance = Opaque<string, 'Instance'>;
@@ -20,55 +21,81 @@ type LeaveMessage = {
 };
 
 type Message = HandoverMessage | LeaveMessage;
-
+type MessageWithoutSender = Omit<Message, 'sender'>;
 type MessageCallback = (message: Message) => void;
 
 interface IPCMessenger {
   join(room: Room, callback: MessageCallback): Promise<void>;
   getOtherInstances(room: Room): Promise<Array<Instance>>;
-  send(room: Room, message: Message): Promise<void>;
+  send(room: Room, message: MessageWithoutSender): Promise<void>;
 }
 
-const makeRoom = (room: string): Room => {
-  if (!room.length) {
-    throw new TypeError('Empty string cannot be used as room!');
+const isRoom = (input: unknown): input is Room => (
+  typeof input === 'string' &&
+    input.length > 0 &&
+    !input.includes(':')
+);
+
+const makeRoom = (input: unknown): Room => {
+  if (!isRoom(input)) {
+    throw new TypeError(`${JSON.stringify(input)} is not a valid Room`);
   }
 
-  if (room.includes(':')) {
-    throw new TypeError('Room must not include \':\'!');
-  }
-
-  return room as Room;
+  return input;
 };
 
-const makeInstance = (instance: string): Instance => {
-  if (!instance.length) {
-    throw new TypeError('Empty string cannot be used as instance!');
+const isInstance = (input: unknown): input is Instance => (
+  typeof input === 'string' &&
+    input.length > 0 &&
+    !input.includes(':')
+);
+
+const makeInstance = (input: unknown): Instance => {
+  if (!isInstance(input)) {
+    throw new TypeError(`${JSON.stringify(input)} is not a valid Instance`);
   }
 
-  if (instance.includes(':')) {
-    throw new TypeError('instance must not include \':\'!');
-  }
-
-  return instance as Instance;
+  return input;
 };
 
-// const makeMessage = (message: any): Message => {
-//   // if (typeof message !== 'object' || message === null || Array.isArray(message)) {
-//   //   throw new TypeError('Non-objects cannot be used as messages');
-//   // }
-//   return message as Message;
-// }
+const isHandoverMessage = (input: unknown): input is HandoverMessage => (
+  isPlainObject(input) &&
+    (input as Message).type === MessageTypes.Handover &&
+    isInstance((input as Message).sender) &&
+    (
+      (input as HandoverMessage).state === undefined ||
+      isPlainObject((input as HandoverMessage))
+    )
+);
+
+const isLeaveMessage = (input: unknown): input is LeaveMessage => (
+  isPlainObject(input) &&
+    (input as Message).type === MessageTypes.Leave &&
+    isInstance((input as Message).sender)
+);
+
+const makeMessage = (input: unknown): Message => {
+  if (
+    !isHandoverMessage(input) &&
+    !isLeaveMessage(input)
+  ) {
+    throw new TypeError(`${JSON.stringify(input)} is not a valid Message`);
+  }
+
+  return input;
+};
 
 export default IPCMessenger;
 export {
   Room,
   Instance,
   MessageTypes,
+  MessageWithoutSender,
   HandoverMessage,
   LeaveMessage,
   Message,
   MessageCallback,
   makeRoom,
   makeInstance,
+  makeMessage,
 };

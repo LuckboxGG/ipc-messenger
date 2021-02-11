@@ -7,6 +7,8 @@ import IPCMessenger, {
   Message,
   makeInstance,
   makeRoom,
+  makeMessage,
+  MessageWithoutSender,
 } from './IPCMessenger';
 
 type ConstructorParams = {
@@ -55,7 +57,7 @@ class RedisIPCMessenger implements IPCMessenger {
     }).filter((instance) => instance !== this.instance);
   }
 
-  async send(roomName: string, message: Omit<Message, 'sender'>): Promise<void> {
+  async send(roomName: string, message: MessageWithoutSender): Promise<void> {
     const room = makeRoom(roomName);
     this.makeSureRoomIsJoined(room);
 
@@ -137,11 +139,11 @@ class RedisIPCMessenger implements IPCMessenger {
   }
 
   private deserialize(payload: string) {
-    return JSON.parse(payload) as Message;
+    return makeMessage(JSON.parse(payload));
   }
 
   private warn(...args: Array<unknown>) {
-    console.warn('[RedisIPCMessenger]', ...args);
+    console.warn(`[${new Date().toISOString()}][RedisIPCMessenger]`, ...args);
   }
 }
 

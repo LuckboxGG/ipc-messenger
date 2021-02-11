@@ -11,6 +11,7 @@ const mockedRedis = Redis as jest.Mocked<typeof Redis>;
 describe('RedisIPCMessenger', () => {
   const testMessage = {
     type: MessageTypes.Handover,
+    sender: 'not-me',
   };
 
   describe('join', () => {
