@@ -91,6 +91,7 @@ describe('RedisIPCMessenger', () => {
 
     it('should publish the payload in the correct namespace', async () => {
       await ipcMessenger.join('r1', () => {});
+      await ipcMessenger.join('r2', () => {});
       await ipcMessenger.send('r1', testMessage);
 
       expect(mockedRedis.prototype.publish).toHaveBeenCalledWith('r1', JSON.stringify({
