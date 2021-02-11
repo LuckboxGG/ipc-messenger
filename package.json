@@ -36,7 +36,6 @@
     "ioredis": "^4.22.0"
   },
   "devDependencies": {
-    "typescript": "^4.1.4",
     "@luckbox/eslint-rules": "4.0.4",
     "@types/ioredis": "^4.19.3",
     "@types/jest": "^26.0.3",
@@ -50,6 +49,8 @@
     "husky": "^4.2.5",
     "jest": "^26.1.0",
     "lint-staged": "^10.2.11",
-    "ts-jest": "^26.1.1"
+    "ts-jest": "^26.1.1",
+    "ts-opaque": "^2.2.1",
+    "typescript": "^4.1.4"
   }
 }

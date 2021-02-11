@@ -5,10 +5,12 @@ import IPCMessenger, {
   MessageCallback,
   MessageTypes,
   Message,
+  makeInstance,
+  makeRoom,
 } from './IPCMessenger';
 
 type ConstructorParams = {
-  instance: Instance;
+  instance: string;
   redis?: Redis.RedisOptions,
   expireTime?: number,
   refreshInterval?: number,
@@ -24,9 +26,7 @@ class RedisIPCMessenger implements IPCMessenger {
   private hasSetupCallbacks: boolean;
 
   constructor(params: ConstructorParams) {
-    this.validateInstance(params.instance);
-
-    this.instance = params.instance;
+    this.instance = makeInstance(params.instance);
     this.subscriptions = new Map();
     this.publisher = new Redis(params.redis);
     this.subscriber = new Redis(params.redis);
@@ -35,8 +35,8 @@ class RedisIPCMessenger implements IPCMessenger {
     this.hasSetupCallbacks = false;
   }
 
-  async join(room: Room, callback: MessageCallback): Promise<void> {
-    this.validateRoom(room);
+  async join(roomName: string, callback: MessageCallback): Promise<void> {
+    const room = makeRoom(roomName);
 
     this.storeSubscription(room, callback);
     await this.setupCallbacksIfNecessary();
@@ -44,37 +44,25 @@ class RedisIPCMessenger implements IPCMessenger {
     await this.startRefreshKeyLoop(room);
   }
 
-  async getOtherInstances(room: Room): Promise<Array<Instance>> {
-    this.validateRoom(room);
+  async getOtherInstances(roomName: string): Promise<Array<Instance>> {
+    const room = makeRoom(roomName);
     this.makeSureRoomIsJoined(room);
 
     const keys = await this.publisher.keys(`${room}:*`);
     return keys.map((key) => {
       const [, instance] = key.split(':');
-      return instance;
+      return instance as Instance;
     }).filter((instance) => instance !== this.instance);
   }
 
-  async send(room: Room, message: Omit<Message, 'sender'>): Promise<void> {
-    this.validateRoom(room);
+  async send(roomName: string, message: Omit<Message, 'sender'>): Promise<void> {
+    const room = makeRoom(roomName);
     this.makeSureRoomIsJoined(room);
 
     await this.publisher.publish(room, this.serialize({
       ...message,
       sender: this.instance,
     }));
-  }
-
-  private validateRoom(room: Room) {
-    if (!room.length || room.includes(':')) {
-      throw new TypeError(`room must be a non empty string and should not include ':', ${room} received`);
-    }
-  }
-
-  private validateInstance(instance: Instance) {
-    if (!instance.length || instance.includes(':')) {
-      throw new TypeError(`room/instance must be a non empty string and should not include ':', ${instance} received`);
-    }
   }
 
   private startRefreshKeyLoop = async (room: Room) => {
@@ -115,16 +103,16 @@ class RedisIPCMessenger implements IPCMessenger {
 
   private onExpiredKeyMessage = (_pattern: string, key: string) => {
     const [, room, instance] = key.split(':');
-    const callback = this.subscriptions.get(room) as MessageCallback;
+    const callback = this.subscriptions.get(room as Room) as MessageCallback;
 
     callback({
       type: MessageTypes.Leave,
-      sender: instance,
+      sender: instance as Instance,
     });
   }
 
   private onPubSubMessage = (channel: string, payload: string) => {
-    const callback = this.subscriptions.get(channel) as MessageCallback;
+    const callback = this.subscriptions.get(channel as Room) as MessageCallback;
     const message = this.deserialize(payload);
     if (message.sender === this.instance) {
       return;

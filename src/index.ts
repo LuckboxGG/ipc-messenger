@@ -1,4 +1,3 @@
-// import IPCMessenger from './IPCMessenger';
 import IPCMessenger from './IPCMessenger';
 import RedisIPCMessenger from './RedisIPCMessenger';
 
@@ -7,4 +6,12 @@ export {
   RedisIPCMessenger,
 };
 
-export * from './IPCMessenger';
+export {
+  Room,
+  Instance,
+  MessageTypes,
+  HandoverMessage,
+  LeaveMessage,
+  Message,
+  MessageCallback,
+} from './IPCMessenger';
