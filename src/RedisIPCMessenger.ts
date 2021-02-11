@@ -113,7 +113,7 @@ class RedisIPCMessenger implements IPCMessenger {
     this.hasSetupCallbacks = true;
   }
 
-  private onExpiredKeyMessage = (pattern: string, key: string) => {
+  private onExpiredKeyMessage = (_pattern: string, key: string) => {
     const [, room, instance] = key.split(':');
     const callback = this.subscriptions.get(room) as MessageCallback;
 
