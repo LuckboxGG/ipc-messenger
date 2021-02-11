@@ -8,7 +8,7 @@
 const ipcMessenger = new RedisIPCMessenger({
   instance: 'test',
   expireTime: 10000,
-  refreshTime: 1000,
+  refreshInterval: 1000,
 });
 
 ```

@@ -11,7 +11,7 @@ type ConstructorParams = {
   instance: Instance;
   redis?: Redis.RedisOptions,
   expireTime?: number,
-  refreshTime?: number,
+  refreshInterval?: number,
 }
 
 class RedisIPCMessenger implements IPCMessenger {
@@ -19,7 +19,7 @@ class RedisIPCMessenger implements IPCMessenger {
   private readonly publisher: Redis.Redis;
   private readonly subscriber: Redis.Redis;
   private readonly expireTime: number;
-  private readonly refreshTime: number;
+  private readonly refreshInterval: number;
   private subscriptions: Map<Room, MessageCallback>;
   private hasSetupCallbacks: boolean;
 
@@ -31,7 +31,7 @@ class RedisIPCMessenger implements IPCMessenger {
     this.publisher = new Redis(params.redis);
     this.subscriber = new Redis(params.redis);
     this.expireTime = params.expireTime ?? 30000;
-    this.refreshTime = params.refreshTime ?? 10000;
+    this.refreshInterval = params.refreshInterval ?? 10000;
     this.hasSetupCallbacks = false;
   }
 
@@ -80,7 +80,7 @@ class RedisIPCMessenger implements IPCMessenger {
   private startRefreshKeyLoop = async (room: Room) => {
     const refreshKeyLoop = async () => {
       await this.publisher.set(`${room}:${this.instance}`, '', 'EX', this.expireTime / 1000);
-      setTimeout(refreshKeyLoop, this.refreshTime);
+      setTimeout(refreshKeyLoop, this.refreshInterval);
     };
 
     await refreshKeyLoop();
