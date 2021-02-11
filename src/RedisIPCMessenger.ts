@@ -115,25 +115,22 @@ class RedisIPCMessenger implements IPCMessenger {
 
   private onExpiredKeyMessage = (pattern: string, key: string) => {
     const [, room, instance] = key.split(':');
-    const callback = this.subscriptions.get(room);
-    if (callback) {
-      callback({
-        type: MessageTypes.Leave,
-        sender: instance,
-      });
-    }
+    const callback = this.subscriptions.get(room) as MessageCallback;
+
+    callback({
+      type: MessageTypes.Leave,
+      sender: instance,
+    });
   }
 
   private onPubSubMessage = (channel: string, payload: string) => {
-    const callback = this.subscriptions.get(channel);
-    if (callback) {
-      const message = this.deserialize(payload);
-      if (message.sender === this.instance) {
-        return;
-      }
-
-      callback(message);
+    const callback = this.subscriptions.get(channel) as MessageCallback;
+    const message = this.deserialize(payload);
+    if (message.sender === this.instance) {
+      return;
     }
+
+    callback(message);
   }
 
   private serialize(message: Message) {
