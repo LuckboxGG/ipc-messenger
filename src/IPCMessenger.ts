@@ -30,6 +30,8 @@ interface IPCMessenger {
   send(room: Room, message: MessageWithoutSender): Promise<void>;
 }
 
+export default IPCMessenger;
+
 const isRoom = (input: unknown): input is Room => (
   typeof input === 'string' &&
   input.length > 0 &&
@@ -84,5 +86,3 @@ export const makeMessage = (input: unknown): Message => {
 
   return input;
 };
-
-export default IPCMessenger;
