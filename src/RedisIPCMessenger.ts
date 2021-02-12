@@ -21,7 +21,7 @@ type ConstructorParams = {
   }
 }
 
-class RedisIPCMessenger implements IPCMessenger {
+export default class RedisIPCMessenger implements IPCMessenger {
   private readonly instance: Instance;
   private readonly publisher: Redis.Redis;
   private readonly subscriber: Redis.Redis;
@@ -153,5 +153,3 @@ class RedisIPCMessenger implements IPCMessenger {
     console.warn(`[${new Date().toISOString()}][RedisIPCMessenger]`, ...args);
   }
 }
-
-export default RedisIPCMessenger;

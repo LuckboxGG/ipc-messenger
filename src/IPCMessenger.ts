@@ -1,28 +1,28 @@
 import Opaque from 'ts-opaque';
 import isPlainObject from 'lodash.isplainobject';
 
-type Room = Opaque<string, 'Room'>;
-type Instance = Opaque<string, 'Instance'>;
+export type Room = Opaque<string, 'Room'>;
+export type Instance = Opaque<string, 'Instance'>;
 
-enum MessageTypes {
+export enum MessageTypes {
   Handover = 'handover',
   Leave = 'leave'
 }
 
-type HandoverMessage = {
+export type HandoverMessage = {
   type: MessageTypes.Handover,
   sender: Instance,
   state?: Record<string, unknown>,
 };
 
-type LeaveMessage = {
+export type LeaveMessage = {
   type: MessageTypes.Leave,
   sender: Instance,
 };
 
-type Message = HandoverMessage | LeaveMessage;
-type MessageWithoutSender = Omit<Message, 'sender'>;
-type MessageCallback = (message: Message) => void;
+export type Message = HandoverMessage | LeaveMessage;
+export type MessageWithoutSender = Omit<Message, 'sender'>;
+export type MessageCallback = (message: Message) => void;
 
 interface IPCMessenger {
   join(room: Room, callback: MessageCallback): Promise<void>;
@@ -36,7 +36,7 @@ const isRoom = (input: unknown): input is Room => (
   !input.includes(':')
 );
 
-const makeRoom = (input: unknown): Room => {
+export const makeRoom = (input: unknown): Room => {
   if (!isRoom(input)) {
     throw new TypeError(`${JSON.stringify(input)} is not a valid Room`);
   }
@@ -50,7 +50,7 @@ const isInstance = (input: unknown): input is Instance => (
   !input.includes(':')
 );
 
-const makeInstance = (input: unknown): Instance => {
+export const makeInstance = (input: unknown): Instance => {
   if (!isInstance(input)) {
     throw new TypeError(`${JSON.stringify(input)} is not a valid Instance`);
   }
@@ -74,7 +74,7 @@ const isLeaveMessage = (input: unknown): input is LeaveMessage => (
   isInstance((input as Message).sender)
 );
 
-const makeMessage = (input: unknown): Message => {
+export const makeMessage = (input: unknown): Message => {
   if (
     !isHandoverMessage(input) &&
     !isLeaveMessage(input)
@@ -86,16 +86,3 @@ const makeMessage = (input: unknown): Message => {
 };
 
 export default IPCMessenger;
-export {
-  Room,
-  Instance,
-  MessageTypes,
-  MessageWithoutSender,
-  HandoverMessage,
-  LeaveMessage,
-  Message,
-  MessageCallback,
-  makeRoom,
-  makeInstance,
-  makeMessage,
-};
