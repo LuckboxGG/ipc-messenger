@@ -1,4 +1,6 @@
 import Redis from 'ioredis';
+import omit from 'lodash.omit';
+
 import IPCMessenger, {
   Room,
   Instance,
@@ -13,9 +15,10 @@ import IPCMessenger, {
 
 type ConstructorParams = {
   instance: string;
-  redis?: Redis.RedisOptions,
-  expireTime?: number,
-  refreshInterval?: number,
+  redisOpts?: Redis.RedisOptions & {
+    expireTime?: number,
+    refreshInterval?: number,
+  }
 }
 
 class RedisIPCMessenger implements IPCMessenger {
@@ -30,10 +33,14 @@ class RedisIPCMessenger implements IPCMessenger {
   constructor(params: ConstructorParams) {
     this.instance = makeInstance(params.instance);
     this.subscriptions = new Map();
-    this.publisher = new Redis(params.redis);
-    this.subscriber = new Redis(params.redis);
-    this.expireTime = params.expireTime ?? 30000;
-    this.refreshInterval = params.refreshInterval ?? 10000;
+    const ioRedisConfig = omit(params.redisOpts ?? {}, [
+      'expireTime',
+      'refreshInterval',
+    ]);
+    this.publisher = new Redis(ioRedisConfig);
+    this.subscriber = new Redis(ioRedisConfig);
+    this.expireTime = params.redisOpts?.expireTime ?? 30000;
+    this.refreshInterval = params.redisOpts?.refreshInterval ?? 10000;
     this.hasSetupCallbacks = false;
   }
 
