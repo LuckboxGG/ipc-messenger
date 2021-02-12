@@ -14,7 +14,7 @@ import IPCMessenger, {
 } from './IPCMessenger';
 
 type ConstructorParams = {
-  instance: string;
+  instance: Instance;
   redisOpts?: Redis.RedisOptions & {
     expireTime?: number,
     refreshInterval?: number,
@@ -31,7 +31,7 @@ export default class RedisIPCMessenger implements IPCMessenger {
   private hasSetupCallbacks: boolean;
 
   constructor(params: ConstructorParams) {
-    this.instance = makeInstance(params.instance);
+    this.instance = params.instance;
     this.subscriptions = new Map();
     const ioRedisConfig = omit(params.redisOpts ?? {}, [
       'expireTime',
@@ -44,17 +44,14 @@ export default class RedisIPCMessenger implements IPCMessenger {
     this.hasSetupCallbacks = false;
   }
 
-  async join(roomName: string, callback: MessageCallback): Promise<void> {
-    const room = makeRoom(roomName);
-
+  async join(room: Room, callback: MessageCallback): Promise<void> {
     this.storeSubscription(room, callback);
     await this.setupCallbacksIfNecessary();
     await this.subscribeForRoomEvents(room);
     await this.startRefreshKeyLoop(room);
   }
 
-  async getOtherInstances(roomName: string): Promise<Array<Instance>> {
-    const room = makeRoom(roomName);
+  async getOtherInstances(room: Room): Promise<Array<Instance>> {
     this.makeSureRoomIsJoined(room);
 
     const keys = await this.publisher.keys(`${room}:*`);
@@ -64,14 +61,13 @@ export default class RedisIPCMessenger implements IPCMessenger {
     }).filter((instance) => instance !== this.instance);
   }
 
-  async send(roomName: string, message: MessageWithoutSender): Promise<void> {
-    const room = makeRoom(roomName);
+  async send(room: Room, message: MessageWithoutSender): Promise<void> {
     this.makeSureRoomIsJoined(room);
 
     await this.publisher.publish(room, this.serialize({
       ...message,
       sender: this.instance,
-    }));
+    } as Message));
   }
 
   private startRefreshKeyLoop = async (room: Room) => {
@@ -117,7 +113,7 @@ export default class RedisIPCMessenger implements IPCMessenger {
       callback({
         type: MessageTypes.Leave,
         sender: makeInstance(instance),
-      });
+      } as Message);
     } catch (err) {
       this.warn(err);
     }

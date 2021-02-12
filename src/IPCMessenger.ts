@@ -9,16 +9,16 @@ export enum MessageTypes {
   Leave = 'leave'
 }
 
-export type HandoverMessage = {
+export type HandoverMessage = Opaque<{
   type: MessageTypes.Handover,
   sender: Instance,
   state?: Record<string, unknown>,
-};
+}, 'HandoverMessage'>
 
-export type LeaveMessage = {
+export type LeaveMessage = Opaque<{
   type: MessageTypes.Leave,
   sender: Instance,
-};
+}, 'LeaveMessage'>;
 
 export type Message = HandoverMessage | LeaveMessage;
 export type MessageWithoutSender = Omit<Message, 'sender'>;
