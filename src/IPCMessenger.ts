@@ -32,8 +32,8 @@ interface IPCMessenger {
 
 const isRoom = (input: unknown): input is Room => (
   typeof input === 'string' &&
-    input.length > 0 &&
-    !input.includes(':')
+  input.length > 0 &&
+  !input.includes(':')
 );
 
 const makeRoom = (input: unknown): Room => {
@@ -46,8 +46,8 @@ const makeRoom = (input: unknown): Room => {
 
 const isInstance = (input: unknown): input is Instance => (
   typeof input === 'string' &&
-    input.length > 0 &&
-    !input.includes(':')
+  input.length > 0 &&
+  !input.includes(':')
 );
 
 const makeInstance = (input: unknown): Instance => {
@@ -60,18 +60,18 @@ const makeInstance = (input: unknown): Instance => {
 
 const isHandoverMessage = (input: unknown): input is HandoverMessage => (
   isPlainObject(input) &&
-    (input as Message).type === MessageTypes.Handover &&
-    isInstance((input as Message).sender) &&
-    (
-      (input as HandoverMessage).state === undefined ||
-      isPlainObject((input as HandoverMessage))
-    )
+  (input as Message).type === MessageTypes.Handover &&
+  isInstance((input as Message).sender) &&
+  (
+    (input as HandoverMessage).state === undefined ||
+    isPlainObject((input as HandoverMessage))
+  )
 );
 
 const isLeaveMessage = (input: unknown): input is LeaveMessage => (
   isPlainObject(input) &&
-    (input as Message).type === MessageTypes.Leave &&
-    isInstance((input as Message).sender)
+  (input as Message).type === MessageTypes.Leave &&
+  isInstance((input as Message).sender)
 );
 
 const makeMessage = (input: unknown): Message => {
