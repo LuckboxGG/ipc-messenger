@@ -64,7 +64,7 @@ const isHandoverMessage = (input: unknown): input is HandoverMessage => (
   isInstance((input as Message).sender) &&
   (
     (input as HandoverMessage).state === undefined ||
-    isPlainObject((input as HandoverMessage))
+    isPlainObject((input as HandoverMessage).state)
   )
 );
 
