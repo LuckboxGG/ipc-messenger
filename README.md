@@ -7,15 +7,19 @@
 ```
 const ipcMessenger = new RedisIPCMessenger({
   instance: 'test',
-  expireTime: 10000,
-  refreshInterval: 1000,
+  redisOpts: {
+    host: 'redis',
+    port: 6379,
+    expireTime: 10000,
+    refreshInterval: 1000,
+  }.
 });
 
 ```
 
 ### Methods
 
-- `join(room: string, callback: Function)` - Joins the room provided in the constructor args and automatically starts listening for new messages
-- `getOtherInstances(room: string)` - Retrieves an array of the other participants in the room
-- `send(room: string, message: Message)` - Sends a message to the rest of the participants in the room
+- `join(room: Room, callback: Function)` - Joins the room provided in the constructor args and automatically starts listening for new messages
+- `getOtherInstances(room: Room)` - Retrieves an array of the other participants in the room
+- `send(room: Room, message: Message)` - Sends a message to the rest of the participants in the room
 
