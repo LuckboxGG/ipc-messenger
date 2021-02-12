@@ -22,12 +22,12 @@ describe('RedisIPCMessenger', () => {
     it.each([
       '', 'room:',
     ])('should throw TypeError when calling with room - %s', async (room) => {
-      await expect(ipcMessenger.join(room, () => {})).rejects.toThrow(TypeError);
+      await expect(ipcMessenger.join(room, () => { })).rejects.toThrow(TypeError);
     });
 
     it('should route the message to the correct callback', async () => {
       type GenericFunction = (...arg: Array<any>) => void;
-      let hijackedCallback: GenericFunction = () => {};
+      let hijackedCallback: GenericFunction = () => { };
       mockedRedis.prototype.on = (event: string, callback: GenericFunction) => {
         if (event === 'message') {
           hijackedCallback = callback;
@@ -62,7 +62,7 @@ describe('RedisIPCMessenger', () => {
     });
 
     it('should query all the keys and filter out its own one', async () => {
-      await ipcMessenger.join('r1', () => {});
+      await ipcMessenger.join('r1', () => { });
 
       mockedRedis.prototype.keys.mockImplementationOnce(async (pattern: string) => {
         if (pattern === 'r1:*') {
@@ -91,8 +91,8 @@ describe('RedisIPCMessenger', () => {
     });
 
     it('should publish the payload in the correct namespace', async () => {
-      await ipcMessenger.join('r1', () => {});
-      await ipcMessenger.join('r2', () => {});
+      await ipcMessenger.join('r1', () => { });
+      await ipcMessenger.join('r2', () => { });
       await ipcMessenger.send('r1', testMessage);
 
       expect(mockedRedis.prototype.publish).toHaveBeenCalledWith('r1', JSON.stringify({
