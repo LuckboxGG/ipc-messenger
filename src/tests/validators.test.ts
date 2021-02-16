@@ -2,6 +2,7 @@ import {
   makeInstance,
   makeRoom,
   makeMessage,
+  makeMessageWithoutSender,
   MessageTypes,
 } from '../IPCMessenger';
 
@@ -48,5 +49,25 @@ describe('makeMessage', () => {
     { type: MessageTypes.Handover, sender: 'someone', state: {} },
   ])('should return the value calling with %s', (message) => {
     expect(makeMessage(message)).toEqual(message);
+  });
+});
+
+describe('makeMessageWithoutSender', () => {
+  it.each([
+    '', null, {},
+    { type: 'unknown' },
+    { type: MessageTypes.Handover, state: 'not-an-obj' },
+    { type: MessageTypes.Handover, sender: 'has-a-sender' },
+    { type: MessageTypes.Leave, sender: 'also-has-a-sender' },
+  ])('should throw TypeError when calling with %s', (message) => {
+    expect(() => makeMessageWithoutSender(message)).toThrow(TypeError);
+  });
+
+  it.each([
+    { type: MessageTypes.Leave },
+    { type: MessageTypes.Handover },
+    { type: MessageTypes.Handover, state: {} },
+  ])('should return the value calling with %s', (message) => {
+    expect(makeMessageWithoutSender(message)).toEqual(message);
   });
 });

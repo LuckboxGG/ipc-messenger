@@ -60,6 +60,7 @@ export const makeInstance = (input: unknown): Instance => {
   return input;
 };
 
+
 const isHandoverMessage = (input: unknown): input is HandoverMessage => (
   isPlainObject(input) &&
   (input as Message).type === MessageTypes.Handover &&
@@ -75,6 +76,26 @@ const isLeaveMessage = (input: unknown): input is LeaveMessage => (
   (input as Message).type === MessageTypes.Leave &&
   isInstance((input as Message).sender)
 );
+
+const isMessageWithoutSender = (input: unknown): input is MessageWithoutSender => (
+  isPlainObject(input) &&
+  (input as Message).sender === undefined &&
+  (
+    (input as Message).type === MessageTypes.Leave ||
+    (
+      (input as Message).type === MessageTypes.Handover &&
+      (input as HandoverMessage).state === undefined || isPlainObject((input as HandoverMessage).state)
+    )
+  )
+);
+
+export const makeMessageWithoutSender = (input: unknown): MessageWithoutSender => {
+  if (!isMessageWithoutSender(input)) {
+    throw new TypeError(`${JSON.stringify(input)} is not a valid MessageWithoutSender`);
+  }
+
+  return input;
+};
 
 export const makeMessage = (input: unknown): Message => {
   if (
