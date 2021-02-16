@@ -110,6 +110,10 @@ export default class RedisIPCMessenger implements IPCMessenger {
         throw new Error(`Failed to map ${key} to a callback`);
       }
 
+      if (instance === this.instance) {
+        return;
+      }
+
       callback({
         type: MessageTypes.Leave,
         sender: makeInstance(instance),

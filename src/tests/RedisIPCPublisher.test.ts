@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function, no-new */
 
 import Redis from 'ioredis';
-import {
+import IPCMessenger, {
   MessageTypes,
   makeInstance,
   makeRoom,
@@ -20,8 +20,11 @@ describe('RedisIPCMessenger', () => {
   });
 
   describe('join', () => {
-    const ipcMessenger = new RedisIPCMessenger({
-      instance: makeInstance('c1'),
+    let ipcMessenger: IPCMessenger;
+    beforeEach(() => {
+      ipcMessenger = new RedisIPCMessenger({
+        instance: makeInstance('c1'),
+      });
     });
 
     it('should route the message to the correct callback', async () => {
@@ -42,6 +45,28 @@ describe('RedisIPCMessenger', () => {
 
       expect(spiedCallback1).toHaveBeenCalledWith(testMessage);
       expect(spiedCallback2).not.toHaveBeenCalled();
+    });
+
+    it('should skip the event for its own expired key message', async () => {
+      type GenericFunction = (...arg: Array<any>) => void;
+      let hijackedCallback: GenericFunction = () => { };
+      mockedRedis.prototype.on = (event: string, callback: GenericFunction) => {
+        if (event === 'pmessage') {
+          hijackedCallback = callback;
+        }
+      };
+
+      const spiedCallback = jest.fn();
+      await ipcMessenger.join(makeRoom('r1'), spiedCallback);
+
+      hijackedCallback('', '_:r1:c1');
+      expect(spiedCallback).not.toHaveBeenCalled();
+
+      hijackedCallback('', '_:r1:c2');
+      expect(spiedCallback).toHaveBeenCalledWith({
+        type: MessageTypes.Leave,
+        sender: 'c2',
+      });
     });
   });
 
