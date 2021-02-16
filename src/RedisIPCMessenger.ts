@@ -104,19 +104,20 @@ export default class RedisIPCMessenger implements IPCMessenger {
 
   private onExpiredKeyMessage = (_pattern: string, key: string) => {
     try {
-      const [, room, instance] = key.split(':');
-      const callback = this.subscriptions.get(makeRoom(room));
-      if (!callback) {
-        throw new Error(`Failed to map ${key} to a callback`);
-      }
-
+      const parts = key.split(':');
+      const instance = makeInstance(parts[2]);
       if (instance === this.instance) {
         return;
       }
 
+      const callback = this.subscriptions.get(makeRoom(parts[1]));
+      if (!callback) {
+        throw new Error(`Failed to map ${key} to a callback`);
+      }
+
       callback({
         type: MessageTypes.Leave,
-        sender: makeInstance(instance),
+        sender: instance,
       } as Message);
     } catch (err) {
       this.warn(err);
