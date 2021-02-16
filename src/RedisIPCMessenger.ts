@@ -114,7 +114,7 @@ export default class RedisIPCMessenger implements IPCMessenger {
         sender: parts[2],
       });
 
-      if (message.sender === this.instance) {
+      if (this.isMessageMine(message)) {
         return;
       }
 
@@ -132,7 +132,7 @@ export default class RedisIPCMessenger implements IPCMessenger {
       }
 
       const message = this.deserialize(payload);
-      if (message.sender === this.instance) {
+      if (this.isMessageMine(message)) {
         return;
       }
 
@@ -152,5 +152,9 @@ export default class RedisIPCMessenger implements IPCMessenger {
 
   private warn(...args: Array<unknown>) {
     console.warn(`[${new Date().toISOString()}][RedisIPCMessenger]`, ...args);
+  }
+
+  private isMessageMine(message: Message) {
+    return message.sender === this.instance;
   }
 }
