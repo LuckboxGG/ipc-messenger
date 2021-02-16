@@ -7,7 +7,6 @@ import IPCMessenger, {
   MessageCallback,
   MessageTypes,
   Message,
-  makeInstance,
   makeRoom,
   makeMessage,
   MessageWithoutSender,
@@ -110,15 +109,16 @@ export default class RedisIPCMessenger implements IPCMessenger {
         throw new Error(`Failed to map ${key} to a callback`);
       }
 
-      const instance = makeInstance(parts[2]);
-      if (instance === this.instance) {
+      const message = makeMessage({
+        type: MessageTypes.Leave,
+        sender: parts[2],
+      });
+
+      if (message.sender === this.instance) {
         return;
       }
 
-      callback({
-        type: MessageTypes.Leave,
-        sender: instance,
-      } as Message);
+      callback(message);
     } catch (err) {
       this.warn(err);
     }
