@@ -10,6 +10,7 @@ import IPCMessenger, {
   makeRoom,
   makeMessage,
   MessageWithoutSender,
+  makeInstance,
 } from './IPCMessenger';
 
 type ConstructorParams = {
@@ -54,10 +55,20 @@ export default class RedisIPCMessenger implements IPCMessenger {
     this.makeSureRoomIsJoined(room);
 
     const keys = await this.publisher.keys(`${room}:*`);
-    return keys.map((key) => {
-      const [, instance] = key.split(':');
-      return instance as Instance;
-    }).filter((instance) => instance !== this.instance);
+    const otherInstances: Array<Instance> = [];
+    for (const key of keys) {
+      try {
+        const parts = key.split(':');
+        const instance = makeInstance(parts[1]);
+        if (instance !== this.instance) {
+          otherInstances.push(instance);
+        }
+      } catch (err) {
+        this.warn(err);
+      }
+    }
+
+    return otherInstances;
   }
 
   async send(room: Room, message: MessageWithoutSender): Promise<void> {
