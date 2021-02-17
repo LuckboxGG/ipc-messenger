@@ -12,7 +12,7 @@ const ipcMessenger = new RedisIPCMessenger({
     port: 6379,
     expireTime: 10000,
     refreshInterval: 1000,
-  }.
+  }
 });
 
 ```
