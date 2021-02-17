@@ -82,7 +82,7 @@ export default class RedisIPCMessenger implements IPCMessenger {
 
   private startRefreshKeyLoop = async (room: Room) => {
     await this.publisher.set(`${room}:${this.instance}`, '', 'EX', this.expireTime / 1000);
-    setTimeout(this.startRefreshKeyLoop, this.refreshInterval);
+    setTimeout(() => this.startRefreshKeyLoop(room), this.refreshInterval);
   };
 
   private storeSubscription(room: Room, callback: MessageCallback) {

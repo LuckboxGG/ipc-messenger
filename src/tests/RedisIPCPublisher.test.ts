@@ -25,6 +25,9 @@ describe('RedisIPCMessenger', () => {
       ipcMessenger = new RedisIPCMessenger({
         instance: makeInstance('c1'),
       });
+
+      mockedRedis.prototype.set.mockReset();
+      mockedRedis.prototype.get.mockReset();
     });
 
     it('should route the message to the correct callback', async () => {
@@ -67,6 +70,23 @@ describe('RedisIPCMessenger', () => {
         type: MessageTypes.Leave,
         sender: 'c2',
       });
+    });
+
+    it('should refresh its key periodically', async () => {
+      const customIpcMessenger = new RedisIPCMessenger({
+        instance: makeInstance('c1'),
+        redisOpts: {
+          refreshInterval: 100,
+          expireTime: 2000,
+        },
+      });
+
+      await customIpcMessenger.join(makeRoom('r1'), () => {});
+      await sleep(150);
+
+      expect(mockedRedis.prototype.set).toHaveBeenCalledTimes(2);
+      expect(mockedRedis.prototype.set).toHaveBeenNthCalledWith(1, 'r1:c1', '', 'EX', 2);
+      expect(mockedRedis.prototype.set).toHaveBeenNthCalledWith(2, 'r1:c1', '', 'EX', 2);
     });
   });
 
@@ -114,3 +134,7 @@ describe('RedisIPCMessenger', () => {
     });
   });
 });
+
+function sleep(msec: number) {
+  return new Promise((resolve) => setTimeout(resolve, msec));
+}
