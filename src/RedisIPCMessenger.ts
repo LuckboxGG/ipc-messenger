@@ -7,10 +7,10 @@ import IPCMessenger, {
   MessageCallback,
   MessageTypes,
   Message,
-  makeInstance,
   makeRoom,
   makeMessage,
   MessageWithoutSender,
+  makeInstance,
 } from './IPCMessenger';
 
 type ConstructorParams = {
@@ -55,10 +55,20 @@ export default class RedisIPCMessenger implements IPCMessenger {
     this.makeSureRoomIsJoined(room);
 
     const keys = await this.publisher.keys(`${room}:*`);
-    return keys.map((key) => {
-      const [, instance] = key.split(':');
-      return instance as Instance;
-    }).filter((instance) => instance !== this.instance);
+    const otherInstances: Array<Instance> = [];
+    for (const key of keys) {
+      try {
+        const parts = key.split(':');
+        const instance = makeInstance(parts[1]);
+        if (instance !== this.instance) {
+          otherInstances.push(instance);
+        }
+      } catch (err) {
+        this.warn(err);
+      }
+    }
+
+    return otherInstances;
   }
 
   async send(room: Room, message: MessageWithoutSender): Promise<void> {
@@ -104,16 +114,22 @@ export default class RedisIPCMessenger implements IPCMessenger {
 
   private onExpiredKeyMessage = (_pattern: string, key: string) => {
     try {
-      const [, room, instance] = key.split(':');
-      const callback = this.subscriptions.get(makeRoom(room));
+      const parts = key.split(':');
+      const callback = this.subscriptions.get(makeRoom(parts[1]));
       if (!callback) {
         throw new Error(`Failed to map ${key} to a callback`);
       }
 
-      callback({
+      const message = makeMessage({
         type: MessageTypes.Leave,
-        sender: makeInstance(instance),
-      } as Message);
+        sender: parts[2],
+      });
+
+      if (this.isMessageMine(message)) {
+        return;
+      }
+
+      callback(message);
     } catch (err) {
       this.warn(err);
     }
@@ -127,7 +143,7 @@ export default class RedisIPCMessenger implements IPCMessenger {
       }
 
       const message = this.deserialize(payload);
-      if (message.sender === this.instance) {
+      if (this.isMessageMine(message)) {
         return;
       }
 
@@ -147,5 +163,9 @@ export default class RedisIPCMessenger implements IPCMessenger {
 
   private warn(...args: Array<unknown>) {
     console.warn(`[${new Date().toISOString()}][RedisIPCMessenger]`, ...args);
+  }
+
+  private isMessageMine(message: Message) {
+    return message.sender === this.instance;
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "@luckbox/ipc-messenger",
   "author": "Luckbox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Client for ipc",
   "main": "dist/index.js",
   "repository": {
@@ -27,7 +27,8 @@
   "homepage": "https://github.com/LuckboxGG/ipc-messenger#readme",
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "lint-staged",
+      "pre-push": "npm audit"
     }
   },
   "keywords": [],

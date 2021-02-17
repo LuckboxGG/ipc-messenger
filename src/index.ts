@@ -15,6 +15,6 @@ export {
   Message,
   MessageCallback,
   makeInstance,
-  makeMessage,
+  makeMessageWithoutSender,
   makeRoom,
 } from './IPCMessenger';
