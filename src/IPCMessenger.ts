@@ -44,16 +44,16 @@ export const makeMessageType = (value: unknown): MessageType => {
   return value;
 };
 
-type MessageDataTypes = string | number | boolean | null | void | MessageDataArray | MessageDataObject;
+type MessageDataTypes = string | number | boolean | null | MessageDataArray | MessageDataObject;
 type MessageDataArray = Array<MessageDataTypes>;
 interface MessageDataObject {
   [key: string]: MessageDataTypes;
 }
 
-export type Message<DataType extends MessageDataTypes = void> = {
+export type Message = {
   type: MessageType,
   sender: Instance,
-  data: DataType,
+  data?: MessageDataTypes,
 };
 
 export type MessageWithoutSender = Omit<Message, 'sender'>;

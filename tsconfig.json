@@ -12,9 +12,10 @@
     "removeComments": true,
     "resolveJsonModule": true,
     "noImplicitAny": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "declaration": true,
   },
   "include": [
     "src/index.ts"
-  ],
+  ]
 }
