@@ -44,17 +44,17 @@ export const makeMessageType = (value: unknown): MessageType => {
   return value;
 };
 
-type MessageDataTypes = string | number | boolean | null | MessageDataArray | MessageDataObject;
-type MessageDataArray = Array<MessageDataTypes>;
+type MessageData = string | number | boolean | null | MessageDataArray | MessageDataObject;
+type MessageDataArray = Array<MessageData>;
 interface MessageDataObject {
-  [key: string]: MessageDataTypes;
+  [key: string]: MessageData;
 }
 
-export type Message = {
+export type Message = Opaque<{
   type: MessageType,
   sender: Instance,
-  data?: MessageDataTypes,
-};
+  data?: MessageData,
+}, 'Message'>;
 
 export type MessageWithoutSender = Omit<Message, 'sender'>;
 export type MessageCallback = (message: Message) => void;
@@ -77,17 +77,40 @@ export type LeaveMessage = Opaque<{
 
 interface IPCMessenger {
   join(room: Room, callback: MessageCallback): Promise<void>;
-  leave(room: Room): Promise<void>;
   getOtherInstances(room: Room): Promise<Array<Instance>>;
   send(room: Room, message: MessageWithoutSender): Promise<void>;
 }
 
 export default IPCMessenger;
 
+const isMessageDataObject = (input: unknown): input is MessageDataObject => {
+  if (!isPlainObject(input)) {
+    return false;
+  }
+
+  for (const key in input) {
+    if (!isMessageData(input[key])) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const isMessageData = (input: unknown): input is MessageData => (
+  typeof input === 'string' ||
+  typeof input === 'number' ||
+  typeof input === 'boolean' ||
+  input === null ||
+  (Array.isArray(input) && input.every((value) => isMessageData(value))) ||
+  isMessageDataObject(input)
+);
+
 const isMessageWithoutSender = (input: unknown): input is MessageWithoutSender => (
   isPlainObject(input) &&
   isMessageType(input.type) &&
-  typeof input.sender === 'undefined'
+  typeof input.sender === 'undefined' &&
+  (typeof input.data === 'undefined' || isMessageData(input.data))
 );
 
 export const makeMessageWithoutSender = (input: unknown): MessageWithoutSender => {
@@ -101,7 +124,8 @@ export const makeMessageWithoutSender = (input: unknown): MessageWithoutSender =
 const isMessage = (input: unknown): input is Message => (
   isPlainObject(input) &&
   isMessageType(input.type) &&
-  isInstance(input.sender)
+  isInstance(input.sender) &&
+  (typeof input.data === 'undefined' || isMessageData(input.data))
 );
 
 export const makeMessage = (input: unknown): Message => {
