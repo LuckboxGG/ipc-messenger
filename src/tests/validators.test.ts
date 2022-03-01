@@ -3,7 +3,6 @@ import {
   makeRoom,
   makeMessage,
   makeMessageWithoutSender,
-  MessageTypes,
 } from '../IPCMessenger';
 
 describe('makeInstance', () => {
@@ -45,9 +44,9 @@ describe('makeMessage', () => {
   });
 
   it.each([
-    { type: MessageTypes.Leave, sender: 'someone' },
-    { type: MessageTypes.Handover, sender: 'someone' },
-    { type: MessageTypes.Handover, sender: 'someone', data: {} },
+    { type: 'leave', sender: 'someone' },
+    { type: 'handover', sender: 'someone' },
+    { type: 'handover', sender: 'someone', data: {} },
   ])('should return the value calling with %s', (message) => {
     expect(makeMessage(message)).toEqual(message);
   });
@@ -65,9 +64,9 @@ describe('makeMessageWithoutSender', () => {
   });
 
   it.each([
-    { type: MessageTypes.Leave },
-    { type: MessageTypes.Handover },
-    { type: MessageTypes.Handover, data: {} },
+    { type: 'leave' },
+    { type: 'handover' },
+    { type: 'handover', data: {} },
   ])('should return the value calling with %s', (message) => {
     expect(makeMessageWithoutSender(message)).toEqual(message);
   });

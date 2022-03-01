@@ -10,8 +10,6 @@ export {
   Room,
   Instance,
   MessageTypes,
-  HandoverMessage,
-  LeaveMessage,
   Message,
   MessageCallback,
   makeInstance,

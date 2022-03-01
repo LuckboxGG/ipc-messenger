@@ -64,17 +64,6 @@ export enum MessageTypes {
   Leave = 'leave'
 }
 
-export type HandoverMessage = Opaque<{
-  type: MessageTypes.Handover,
-  sender: Instance,
-  state?: Record<string, unknown>,
-}, 'HandoverMessage'>
-
-export type LeaveMessage = Opaque<{
-  type: MessageTypes.Leave,
-  sender: Instance,
-}, 'LeaveMessage'>;
-
 interface IPCMessenger {
   join(room: Room, callback: MessageCallback): Promise<void>;
   getOtherInstances(room: Room): Promise<Array<Instance>>;
