@@ -55,10 +55,7 @@ describe('makeMessage', () => {
 describe('makeMessageWithoutSender', () => {
   it.each([
     '', null, {},
-    { type: 'unknown' },
-    { type: MessageTypes.Handover, state: 'not-an-obj' },
-    { type: MessageTypes.Handover, sender: 'has-a-sender' },
-    { type: MessageTypes.Leave, sender: 'also-has-a-sender' },
+    { type: '' },
   ])('should throw TypeError when calling with %s', (message) => {
     expect(() => makeMessageWithoutSender(message)).toThrow(TypeError);
   });

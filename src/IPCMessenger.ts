@@ -1,8 +1,63 @@
 import Opaque from 'ts-opaque';
-import isPlainObject from 'lodash.isplainobject';
+import baseIsPlainObject from 'lodash.isplainobject';
 
 export type Room = Opaque<string, 'Room'>;
+const isRoom = (input: unknown): input is Room => (
+  typeof input === 'string' &&
+  input.length > 0 &&
+  !input.includes(':')
+);
+
+export const makeRoom = (input: unknown): Room => {
+  if (!isRoom(input)) {
+    throw new TypeError(`${JSON.stringify(input)} is not a valid Room`);
+  }
+
+  return input;
+};
+
 export type Instance = Opaque<string, 'Instance'>;
+const isInstance = (input: unknown): input is Instance => (
+  typeof input === 'string' &&
+  input.length > 0 &&
+  !input.includes(':')
+);
+
+export const makeInstance = (input: unknown): Instance => {
+  if (!isInstance(input)) {
+    throw new TypeError(`${JSON.stringify(input)} is not a valid Instance`);
+  }
+
+  return input;
+};
+
+type PlainObject = Record<string, unknown>;
+const isPlainObject = (value: unknown): value is PlainObject => baseIsPlainObject(value);
+
+type MessageType = Opaque<string, 'NonEmptyString'>;
+const isMessageType = (value: unknown): value is MessageType => typeof value === 'string' && value.length > 0;
+export const makeMessageType = (value: unknown): MessageType => {
+  if (!isMessageType(value)) {
+    throw new TypeError(`Value '${JSON.stringify(value)}' could not be interpreted as non-empty string!`);
+  }
+
+  return value;
+};
+
+type MessageDataTypes = string | number | boolean | null | void | MessageDataArray | MessageDataObject;
+type MessageDataArray = Array<MessageDataTypes>;
+interface MessageDataObject {
+  [key: string]: MessageDataTypes;
+}
+
+export type Message<DataType extends MessageDataTypes = void> = {
+  type: MessageType,
+  sender: Instance,
+  data: DataType,
+};
+
+export type MessageWithoutSender = Omit<Message, 'sender'>;
+export type MessageCallback = (message: Message) => void;
 
 export enum MessageTypes {
   Handover = 'handover',
@@ -20,73 +75,19 @@ export type LeaveMessage = Opaque<{
   sender: Instance,
 }, 'LeaveMessage'>;
 
-export type Message = HandoverMessage | LeaveMessage;
-export type MessageWithoutSender = Omit<Message, 'sender'>;
-export type MessageCallback = (message: Message) => void;
-
 interface IPCMessenger {
   join(room: Room, callback: MessageCallback): Promise<void>;
+  leave(room: Room): Promise<void>;
   getOtherInstances(room: Room): Promise<Array<Instance>>;
   send(room: Room, message: MessageWithoutSender): Promise<void>;
 }
 
 export default IPCMessenger;
 
-const isRoom = (input: unknown): input is Room => (
-  typeof input === 'string' &&
-  input.length > 0 &&
-  !input.includes(':')
-);
-
-export const makeRoom = (input: unknown): Room => {
-  if (!isRoom(input)) {
-    throw new TypeError(`${JSON.stringify(input)} is not a valid Room`);
-  }
-
-  return input;
-};
-
-const isInstance = (input: unknown): input is Instance => (
-  typeof input === 'string' &&
-  input.length > 0 &&
-  !input.includes(':')
-);
-
-export const makeInstance = (input: unknown): Instance => {
-  if (!isInstance(input)) {
-    throw new TypeError(`${JSON.stringify(input)} is not a valid Instance`);
-  }
-
-  return input;
-};
-
-
-const isHandoverMessage = (input: unknown): input is HandoverMessage => (
-  isPlainObject(input) &&
-  (input as Message).type === MessageTypes.Handover &&
-  isInstance((input as Message).sender) &&
-  (
-    (input as HandoverMessage).state === undefined ||
-    isPlainObject((input as HandoverMessage).state)
-  )
-);
-
-const isLeaveMessage = (input: unknown): input is LeaveMessage => (
-  isPlainObject(input) &&
-  (input as Message).type === MessageTypes.Leave &&
-  isInstance((input as Message).sender)
-);
-
 const isMessageWithoutSender = (input: unknown): input is MessageWithoutSender => (
   isPlainObject(input) &&
-  (input as Message).sender === undefined &&
-  (
-    (input as Message).type === MessageTypes.Leave ||
-    (
-      (input as Message).type === MessageTypes.Handover &&
-      (input as HandoverMessage).state === undefined || isPlainObject((input as HandoverMessage).state)
-    )
-  )
+  isMessageType(input.type) &&
+  typeof input.sender === 'undefined'
 );
 
 export const makeMessageWithoutSender = (input: unknown): MessageWithoutSender => {
@@ -97,11 +98,14 @@ export const makeMessageWithoutSender = (input: unknown): MessageWithoutSender =
   return input;
 };
 
+const isMessage = (input: unknown): input is Message => (
+  isPlainObject(input) &&
+  isMessageType(input.type) &&
+  isInstance(input.sender)
+);
+
 export const makeMessage = (input: unknown): Message => {
-  if (
-    !isHandoverMessage(input) &&
-    !isLeaveMessage(input)
-  ) {
+  if (!isMessage(input)) {
     throw new TypeError(`${JSON.stringify(input)} is not a valid Message`);
   }
 
