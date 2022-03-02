@@ -2,7 +2,6 @@
 
 import Redis from 'ioredis';
 import IPCMessenger, {
-  MessageTypes,
   makeInstance,
   makeRoom,
   makeMessage,
@@ -15,7 +14,7 @@ const mockedRedis = Redis as jest.Mocked<typeof Redis>;
 
 describe('RedisIPCMessenger', () => {
   const testMessage = makeMessage({
-    type: MessageTypes.Handover,
+    type: 'handover',
     sender: 'not-me',
   });
 
@@ -67,7 +66,7 @@ describe('RedisIPCMessenger', () => {
 
       hijackedCallback('', '_:r1:c2');
       expect(spiedCallback).toHaveBeenCalledWith({
-        type: MessageTypes.Leave,
+        type: 'leave',
         sender: 'c2',
       });
     });
