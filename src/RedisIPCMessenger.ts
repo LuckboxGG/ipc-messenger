@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import Redis, { RedisOptions, Redis as RedisClient } from 'ioredis';
 import omit from 'lodash.omit';
 
 import IPCMessenger, {
@@ -15,7 +15,7 @@ import IPCMessenger, {
 
 type ConstructorParams = {
   instance: Instance;
-  redisOpts?: Redis.RedisOptions & {
+  redisOpts?: RedisOptions & {
     expireTime?: number,
     refreshInterval?: number,
   }
@@ -23,8 +23,8 @@ type ConstructorParams = {
 
 export default class RedisIPCMessenger implements IPCMessenger {
   private readonly instance: Instance;
-  private readonly publisher: Redis.Redis;
-  private readonly subscriber: Redis.Redis;
+  private readonly publisher: RedisClient;
+  private readonly subscriber: RedisClient;
   private readonly expireTime: number;
   private readonly refreshInterval: number;
   private subscriptions: Map<Room, MessageCallback>;
