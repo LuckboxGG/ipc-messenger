@@ -17,6 +17,7 @@ const ipcMessenger = new RabbitMQIPCMessenger({
 
 ### Methods
 
+- `join()` - Joins the room
 - `getOtherInstances()` - Retrieves an array of the other participants in the room (room is passed in the constructor)
 - `send(message: Message)` - Sends a message to the rest of the participants in the room
 
