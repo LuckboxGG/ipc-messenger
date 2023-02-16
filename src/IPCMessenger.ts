@@ -65,9 +65,8 @@ export enum MessageTypes {
 }
 
 interface IPCMessenger {
-  join(room: Room, callback: MessageCallback): Promise<void>;
-  getOtherInstances(room: Room): Promise<Array<Instance>>;
-  send(room: Room, message: MessageWithoutSender): Promise<void>;
+  getOtherInstances(): Promise<Array<Instance>>;
+  send(message: MessageWithoutSender): Promise<void>;
 }
 
 export default IPCMessenger;
