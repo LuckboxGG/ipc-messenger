@@ -21,19 +21,19 @@ type ConstructorParams = {
   },
   loggerFactory: LoggerFactory,
   room: Room,
-  callback: MessageCallback,
 }
 
 export default class RabbitMQIPCMessenger implements IPCMessenger {
   private httpAdapter: HttpAdapter;
-  private connection: amqplib.Connection;
-  private channel: amqplib.Channel;
+  private connection: amqplib.Connection | null = null;
+  private channel: amqplib.Channel | null = null;
   private logger: Logger;
   private isConnected = false;
   private isConnecting = false;
   private queue = new PQueue({ concurrency: 1 });
   private retryDelay = 5000;
   private detectLeftInstancesInterval = 1000;
+  private callback: MessageCallback | null = null;
 
   constructor(private params: ConstructorParams) {
     const httpAdapterFactory = new HttpAdapterFactory();
@@ -41,7 +41,9 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
     this.logger = params.loggerFactory.create(this.constructor.name);
   }
 
-  async join(): Promise<void> {
+  async join(callback: MessageCallback): Promise<void> {
+    this.callback = callback;
+
     this.isConnecting = true;
     await this.setupConnection();
     this.isConnected = true;
@@ -63,7 +65,7 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
 
     const tryToSendMessageLoop = async (): Promise<void> => {
       try {
-        this.channel.publish(this.params.room, '', this.toBuffer({ ...message, sender: this.params.instance }));
+        (this.channel as amqplib.Channel).publish(this.params.room, '', this.toBuffer({ ...message, sender: this.params.instance }));
         return;
       } catch (err) {
         this.logger.error(err);
@@ -90,7 +92,7 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
       }
 
       const leftInstances = lastKnownOtherInstances.filter((lastKnownInstance) => !otherInstances.includes(lastKnownInstance));
-      leftInstances.forEach((leftInstance) => this.params.callback(makeMessage({ type: MessageTypes.Leave, sender: leftInstance })));
+      leftInstances.forEach((leftInstance) => (this.callback as MessageCallback)(makeMessage({ type: MessageTypes.Leave, sender: leftInstance })));
       lastKnownOtherInstances = otherInstances;
     }, this.detectLeftInstancesInterval);
   }
@@ -98,7 +100,16 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
   private async setupConnection() {
     this.connection = await amqplib.connect(this.params.amqp.connectionOpts);
     this.channel = await this.connection.createChannel();
-    this.bindListeners();
+
+    this.connection.off('error', this.handleConnectionOrChannelProblem);
+    this.connection.on('error', this.handleConnectionOrChannelProblem);
+    this.connection.off('close', this.handleConnectionOrChannelProblem);
+    this.connection.on('close', this.handleConnectionOrChannelProblem);
+
+    this.channel.off('error', this.handleConnectionOrChannelProblem);
+    this.channel.on('error', this.handleConnectionOrChannelProblem);
+    this.channel.off('close', this.handleConnectionOrChannelProblem);
+    this.channel.on('close', this.handleConnectionOrChannelProblem);
 
     await this.channel.assertExchange(this.params.room, 'fanout', { durable: true });
     const queue = await this.channel.assertQueue(this.params.instance, {
@@ -123,20 +134,8 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
         return;
       }
 
-      this.params.callback(message);
+      (this.callback as MessageCallback)(message);
     });
-  }
-
-  private bindListeners() {
-    this.connection.off('error', this.handleConnectionOrChannelProblem);
-    this.connection.on('error', this.handleConnectionOrChannelProblem);
-    this.connection.off('close', this.handleConnectionOrChannelProblem);
-    this.connection.on('close', this.handleConnectionOrChannelProblem);
-
-    this.channel.off('error', this.handleConnectionOrChannelProblem);
-    this.channel.on('error', this.handleConnectionOrChannelProblem);
-    this.channel.off('close', this.handleConnectionOrChannelProblem);
-    this.channel.on('close', this.handleConnectionOrChannelProblem);
   }
 
   private handleConnectionOrChannelProblem = async (err?: Error) => {
