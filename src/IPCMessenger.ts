@@ -64,6 +64,7 @@ export enum MessageTypes {
   Leave = 'leave',
   RequestState = 'request_state',
   ReceiveState = 'receive_state',
+  UpdateState = 'update_state',
 }
 
 interface IPCMessenger {
