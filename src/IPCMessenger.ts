@@ -94,6 +94,7 @@ const isMessageData = (input: unknown): input is MessageData => (
   typeof input === 'number' ||
   typeof input === 'boolean' ||
   input === null ||
+  input instanceof Date ||
   (Array.isArray(input) && input.every((value) => isMessageData(value))) ||
   isMessageDataObject(input)
 );
