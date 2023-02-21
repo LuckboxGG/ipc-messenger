@@ -9,7 +9,7 @@ const ipcMessenger = new RabbitMQIPCMessenger({
   instance: 'test',
   amqp: {
     connectionOpts: {},
-    httpUrl: 'http://localhost:15672/'
+    httpUrl: 'http://localhost:15672'
   }
 });
 
