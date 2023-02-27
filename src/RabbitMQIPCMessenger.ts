@@ -13,10 +13,22 @@ import { Logger, LoggerFactory } from '@luckbox/logger-factory';
 import assert from 'assert';
 import PQueue from 'p-queue';
 
+type ConnectionOpts = {
+  protocol?: string | undefined;
+  hostname?: string | undefined;
+  port?: number | undefined;
+  username?: string | undefined;
+  password?: string | undefined;
+  locale?: string | undefined;
+  frameMax?: number | undefined;
+  heartbeat?: number | undefined;
+  vhost?: string | undefined;
+}
+
 type ConstructorParams = {
   instance: Instance;
   amqp: {
-    connectionOpts: amqplib.Options.Connect,
+    connectionOpts: ConnectionOpts,
     httpUrl: string,
   },
   loggerFactory: LoggerFactory,
