@@ -172,8 +172,9 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
   };
 
   private async getQueuesBoundToExchange(exchange: string) {
-    const { username, password } = this.params.amqp.connectionOpts;
-    const response = await this.httpAdapter.get(`${this.params.amqp.httpUrl}/api/exchanges/%2F/${exchange}/bindings/source`, {}, {
+    const { username, password, vhost } = this.params.amqp.connectionOpts;
+    const vhostPart = encodeURIComponent(vhost ?? '/');
+    const response = await this.httpAdapter.get(`${this.params.amqp.httpUrl}/api/exchanges/${vhostPart}/${exchange}/bindings/source`, {}, {
       'Authorization': 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64'),
     }) as Array<{ destination: string }>;
 
