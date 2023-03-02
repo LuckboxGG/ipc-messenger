@@ -19,9 +19,6 @@ type ConnectionOpts = {
   port?: number | undefined;
   username?: string | undefined;
   password?: string | undefined;
-  locale?: string | undefined;
-  frameMax?: number | undefined;
-  heartbeat?: number | undefined;
   vhost?: string | undefined;
 }
 
