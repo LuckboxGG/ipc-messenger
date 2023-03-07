@@ -1,9 +1,9 @@
 import IPCMessenger from './IPCMessenger';
-import RedisIPCMessenger from './RedisIPCMessenger';
+import RabbitMQIPCMessenger from './RabbitMQIPCMessenger';
 
 export {
   IPCMessenger,
-  RedisIPCMessenger,
+  RabbitMQIPCMessenger,
 };
 
 export {

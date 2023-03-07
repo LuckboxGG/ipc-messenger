@@ -5,13 +5,11 @@
 ### Usage
 
 ```
-const ipcMessenger = new RedisIPCMessenger({
+const ipcMessenger = new RabbitMQIPCMessenger({
   instance: 'test',
-  redisOpts: {
-    host: 'redis',
-    port: 6379,
-    expireTime: 10000,
-    refreshInterval: 1000,
+  amqp: {
+    connectionOpts: {},
+    httpUrl: 'http://localhost:15672'
   }
 });
 
@@ -19,7 +17,7 @@ const ipcMessenger = new RedisIPCMessenger({
 
 ### Methods
 
-- `join(room: Room, callback: Function)` - Joins the room provided in the constructor args and automatically starts listening for new messages
-- `getOtherInstances(room: Room)` - Retrieves an array of the other participants in the room
-- `send(room: Room, message: Message)` - Sends a message to the rest of the participants in the room
+- `join()` - Joins the room
+- `getOtherInstances()` - Retrieves an array of the other participants in the room (room is passed in the constructor)
+- `send(message: Message)` - Sends a message to the rest of the participants in the room
 

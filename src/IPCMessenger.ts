@@ -61,13 +61,16 @@ export type MessageCallback = (message: Message) => void;
 
 export enum MessageTypes {
   Handover = 'handover',
-  Leave = 'leave'
+  Leave = 'leave',
+  RequestState = 'request_state',
+  ReceiveState = 'receive_state',
+  UpdateState = 'update_state',
 }
 
 interface IPCMessenger {
-  join(room: Room, callback: MessageCallback): Promise<void>;
-  getOtherInstances(room: Room): Promise<Array<Instance>>;
-  send(room: Room, message: MessageWithoutSender): Promise<void>;
+  join(callback: MessageCallback): Promise<void>;
+  getOtherInstances(): Promise<Array<Instance>>;
+  send(message: MessageWithoutSender): Promise<void>;
 }
 
 export default IPCMessenger;
