@@ -12,7 +12,6 @@ import HttpAdapterFactory, { HttpAdapter } from '@luckbox/http-adapter-factory';
 import { Logger, LoggerFactory } from '@luckbox/logger-factory';
 import assert from 'assert';
 import PQueue from 'p-queue';
-import { promisify } from 'util';
 
 type ConnectionOpts = {
   protocol?: string | undefined;
@@ -74,10 +73,17 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
     assert(this.channel);
 
     const tryToSendMessageLoop = async (): Promise<void> => {
-      const publishAsync = promisify((this.channel as amqplib.ConfirmChannel).publish);
 
       try {
-        await publishAsync(this.params.room, '', this.toBuffer({ ...message, sender: this.params.instance }), {});
+        await new Promise<void>((resolve, reject) => {
+          (this.channel as amqplib.ConfirmChannel).publish(this.params.room, '', this.toBuffer({ ...message, sender: this.params.instance }), undefined, (err) => {
+            if (err) {
+              return reject(err);
+            }
+
+            resolve();
+          });
+        });
         return;
       } catch (err) {
         this.logger.error(err);
