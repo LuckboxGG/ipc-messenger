@@ -35,7 +35,7 @@ type ConstructorParams = {
 export default class RabbitMQIPCMessenger implements IPCMessenger {
   private httpAdapter: HttpAdapter;
   private connection: amqplib.Connection | null = null;
-  private channel: amqplib.Channel | null = null;
+  private channel: amqplib.ConfirmChannel | null = null;
   private logger: Logger;
   private isConnected = false;
   private isConnecting = false;
@@ -73,8 +73,17 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
     assert(this.channel);
 
     const tryToSendMessageLoop = async (): Promise<void> => {
+
       try {
-        (this.channel as amqplib.Channel).publish(this.params.room, '', this.toBuffer({ ...message, sender: this.params.instance }));
+        await new Promise<void>((resolve, reject) => {
+          (this.channel as amqplib.ConfirmChannel).publish(this.params.room, '', this.toBuffer({ ...message, sender: this.params.instance }), undefined, (err) => {
+            if (err) {
+              return reject(err);
+            }
+
+            resolve();
+          });
+        });
         return;
       } catch (err) {
         this.logger.error(err);
@@ -108,7 +117,7 @@ export default class RabbitMQIPCMessenger implements IPCMessenger {
 
   private async setupConnection() {
     this.connection = await amqplib.connect(this.params.amqp.connectionOpts);
-    this.channel = await this.connection.createChannel();
+    this.channel = await this.connection.createConfirmChannel();
 
     this.connection.off('error', this.handleConnectionOrChannelProblem);
     this.connection.on('error', this.handleConnectionOrChannelProblem);
