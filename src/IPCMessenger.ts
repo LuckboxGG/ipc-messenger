@@ -62,6 +62,7 @@ export type MessageCallback = (message: Message) => void;
 export enum MessageTypes {
   Handover = 'handover',
   Leave = 'leave',
+  Join = 'join',
   RequestState = 'request_state',
   ReceiveState = 'receive_state',
   UpdateState = 'update_state',
